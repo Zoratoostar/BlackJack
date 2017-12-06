@@ -6,7 +6,7 @@ class Player
   attr_reader :cards, :value
 
   validate :name, :presence
-  validate :name, :mode, /[А-Яa-z\d]{3,}/i
+  validate :name, :format, /[А-Яa-z\d]{3,}/i
   validate :balance, :type, Integer
 
   def initialize(name, balance)
