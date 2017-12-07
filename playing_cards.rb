@@ -19,8 +19,8 @@ module PlayingCards
       @cards.shuffle!
     end
 
-    def deal(n = 1)
-      @cards.pop(n)
+    def deal
+      @cards.pop
     end
 
     def size

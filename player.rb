@@ -9,9 +9,9 @@ class Player
   validate :name, :format, /[А-Яa-z\d]{3,}/i
   validate :balance, :type, Integer
 
-  def initialize(name, balance)
+  def initialize(name)
     @name = name
-    @balance = balance
+    @balance = 0
     validate!
     @cards = []
     @value = {sum: 0, aces: 0}
@@ -30,5 +30,13 @@ class Player
       max += 10
     end
     max
+  end
+
+  def to_s
+    name
+  end
+
+  def show_cards
+    cards.join
   end
 end
