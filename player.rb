@@ -13,6 +13,9 @@ class Player
     @name = name
     @balance = 0
     validate!
+  end
+
+  def reset
     @cards = []
     @value = {sum: 0, aces: 0}
   end
@@ -32,11 +35,20 @@ class Player
     max
   end
 
+  def has_ace?
+    return false if value.fetch(:aces).zero?
+    true
+  end
+
   def to_s
     name
   end
 
   def show_cards
     cards.join
+  end
+
+  def show_suits
+    show_cards.tr('2-9TJQKA', '*')
   end
 end
