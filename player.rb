@@ -4,6 +4,7 @@ class Player
 
   attr_accessor :name, :balance
   attr_reader :cards, :value
+  private :cards, :value
 
   validate :name, :presence
   validate :name, :format, /[А-Яa-z\d]{3,}/i
@@ -38,6 +39,10 @@ class Player
   def has_ace?
     return false if value.fetch(:aces).zero?
     true
+  end
+
+  def cards_count
+    cards.size
   end
 
   def to_s

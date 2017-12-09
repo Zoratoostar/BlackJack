@@ -111,20 +111,25 @@ class Game
     else
       flag = true if dealer.max_value <= 15
     end
+    puts
     if flag
       dealer.add_card(deck.deal)
-      puts
       puts '  Дилер взял карту.'
+    else
+      puts '  Дилер пропустил ход.'
     end
-    puts
-    puts "  Карты дилера:  #{dealer.show_suits}"
-    puts "    Ваши карты:  #{player.show_cards}  Сумма: #{player.max_value}"
-    puts
-    puts '  Ваше действие:'
-    puts '   1 - добавить ещё карту'
-    puts '   либой другой символ - открыть карты'
-    print '   '
-    player.add_card(deck.deal) if gets.strip[0] == '1'
+    if player.cards_count == 2
+      if flag
+        puts
+        puts "  Карты дилера:  #{dealer.show_suits}"
+      end
+      puts
+      puts '  Ваше действие:'
+      puts '   1 - добавить ещё карту'
+      puts '   либой другой символ - открыть карты'
+      print '   '
+      player.add_card(deck.deal) if gets.strip[0] == '1'
+    end
     showdown
   end
 
