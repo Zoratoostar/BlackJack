@@ -12,35 +12,25 @@ class Game
   end
 
   def set_player
-    puts '  Как я могу обращаться к Вам ?'
-    print '  '
-    self.player = Player.new(gets.strip)
+    self.player = Player.new(Interface.set_player)
   rescue StandardError
     retry
   end
 
   def start
-    puts
-    puts '  Добро пожаловать за стол игры в Чёрного Джека!'
-    puts "  Меня зовут #{dealer.name.inspect}."
+    Interface.greeting(dealer.name.inspect)
     set_player
     loop do
-      puts
-      puts "  #{player}, хотите сыграть круг на #{STAKE} фишек ?"
-      puts '  Да/Нет == Yes/No'
-      print '  '
-      response = gets.strip.capitalize[0].to_sym
-      if %i[Д Y].include?(response)
+      response = Interface.offer_game(player, STAKE)
+      if %w[Д Y].include?(response)
         player.balance = STAKE
         dealer.balance = STAKE
         play_rounds
-      elsif %i[Н N].include?(response)
+      elsif %w[Н N].include?(response)
         break
       end
     end
-    puts
-    puts "  До свидания, #{player}!"
-    puts
+    Interface.bye_bye(player)
   end
 
   def play_rounds
@@ -56,31 +46,27 @@ class Game
         dealer.balance -= lesser
         self.bank = 2 * lesser
       end
-      puts
-      puts "  Раунд #{i += 1}."
-      puts "  В банке #{bank} фишек."
+      Interface.start_round(i += 1, bank)
       res = take_cards
-      puts
+      Interface.blank
       if res.zero?
-        puts '  Ничья: банк пополам.'
+        Interface.draw
         player.balance += bank / 2
         dealer.balance += bank / 2
       elsif res.positive?
-        puts "  #{player} выиграл банк."
+        Interface.show_winner(player)
         player.balance += bank
       else
-        puts "  #{dealer} выиграл банк."
+        Interface.show_winner(dealer)
         dealer.balance += bank
       end
-      puts
-      puts "  #{player}: #{player.balance} фишек."
-      puts "  #{dealer}: #{dealer.balance} фишек."
+      Interface.show_total(player, dealer)
     end
-    puts
+    Interface.blank
     if player.balance.zero?
-      puts '  В следующий раз больше повезёт.'
+      Interface.encourage
     else
-      puts "  Поздравляю, #{player}, #{2 * STAKE} фишек ваши!"
+      Interface.congratulation(player, STAKE)
     end
   end
 
@@ -92,16 +78,7 @@ class Game
       player.add_card(deck.deal)
       dealer.add_card(deck.deal)
     end
-    puts
-    puts "  Карты дилера:  #{dealer.show_suits}"
-    puts "    Ваши карты:  #{player.show_cards}  Сумма: #{player.max_value}"
-    puts
-    puts '  Ваше действие:'
-    puts '   1 - добавить ещё карту'
-    puts '   9 - открыть карты'
-    puts '   либой другой символ - пропустить ход'
-    print '   '
-    case gets.strip[0]
+    case Interface.play_first(player, dealer)
     when '1' then player.add_card(deck.deal)
     when '9' then return showdown
     end
@@ -111,24 +88,16 @@ class Game
     else
       flag = true if dealer.max_value <= 15
     end
-    puts
+    Interface.blank
     if flag
       dealer.add_card(deck.deal)
-      puts '  Дилер взял карту.'
+      Interface.dealer_draws_card
     else
-      puts '  Дилер пропустил ход.'
+      Interface.dealer_checks
     end
     if player.cards_count == 2
-      if flag
-        puts
-        puts "  Карты дилера:  #{dealer.show_suits}"
-      end
-      puts
-      puts '  Ваше действие:'
-      puts '   1 - добавить ещё карту'
-      puts '   либой другой символ - открыть карты'
-      print '   '
-      player.add_card(deck.deal) if gets.strip[0] == '1'
+      Interface.show_dealer(dealer.show_suits) if flag
+      player.add_card(deck.deal) if Interface.play_second == '1'
     end
     showdown
   end
@@ -136,9 +105,7 @@ class Game
   def showdown
     player_val = player.max_value
     dealer_val = dealer.max_value
-    puts
-    puts "  Карты дилера:  #{dealer.show_cards}  Сумма: #{dealer_val}"
-    puts "    Ваши карты:  #{player.show_cards}  Сумма: #{player_val}"
+    Interface.showdown(player, player_val, dealer, dealer_val)
     player_val = 22 if player_val > 21
     dealer_val = 22 if dealer_val > 21
     return 0 if player_val == dealer_val
