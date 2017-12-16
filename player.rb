@@ -2,8 +2,8 @@
 class Player
   include Validation
 
-  attr_accessor :name, :balance
-  attr_reader :cards, :value
+  attr_accessor :balance
+  attr_reader :name, :cards, :value
   private :cards, :value
 
   validate :name, :presence

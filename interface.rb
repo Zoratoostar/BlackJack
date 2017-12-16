@@ -1,17 +1,15 @@
 
 class Interface
-  attr_reader :dealer
-  attr_accessor :player, :bank, :deck
+  attr_reader :game
 
   def initialize
-    dealers = Game::DEALERS
-    @dealer = Player.new(dealers[rand(dealers.size)])
+    @game = Game.new
   end
 
   def set_player
     puts '  Как я могу обращаться к Вам ?'
     print '  '
-    self.player = Player.new(gets.strip)
+    game.player = Player.new(gets.strip)
   rescue StandardError
     retry
   end
@@ -19,80 +17,62 @@ class Interface
   def start
     puts
     puts '  Добро пожаловать за стол игры в Чёрного Джека!'
-    puts "  Меня зовут #{dealer.name.inspect}."
+    puts "  Меня зовут #{game.dealer.name.inspect}."
     set_player
     loop do
       puts
-      puts "  #{player}, хотите сыграть круг на #{Game::STAKE} фишек ?"
+      puts "  #{game.player}, хотите сыграть круг на #{Game::STAKE} фишек ?"
       puts '  Да/Нет == Yes/No'
       print '  '
       response = gets.strip.capitalize[0].to_sym
       if %i[Д Y].include?(response)
-        player.balance = Game::STAKE
-        dealer.balance = Game::STAKE
+        game.issue_stakes
         play_rounds
       elsif %i[Н N].include?(response)
         break
       end
     end
     puts
-    puts "  До свидания, #{player}!"
+    puts "  До свидания, #{game.player}!"
     puts
   end
 
   def play_rounds
     i = 0
-    until player.balance.zero? || dealer.balance.zero?
-      lesser = [player.balance, dealer.balance].min
-      bet = Game::BET
-      if lesser >= bet
-        player.balance -= bet
-        dealer.balance -= bet
-        self.bank = 2 * bet
-      else
-        player.balance -= lesser
-        dealer.balance -= lesser
-        self.bank = 2 * lesser
-      end
+    until game.zero_balance?
+      game.make_bank
       puts
       puts "  Раунд #{i += 1}."
-      puts "  В банке #{bank} фишек."
+      puts "  В банке #{game.bank} фишек."
       res = take_cards
       puts
       if res.zero?
         puts '  Ничья: банк пополам.'
-        player.balance += bank / 2
-        dealer.balance += bank / 2
+        game.split_bank
       elsif res.positive?
-        puts "  #{player} выиграл банк."
-        player.balance += bank
+        puts "  #{game.player} выиграл банк."
+        game.take_bank(game.player)
       else
-        puts "  #{dealer} выиграл банк."
-        dealer.balance += bank
+        puts "  #{game.dealer} выиграл банк."
+        game.take_bank(game.dealer)
       end
       puts
-      puts "  #{player}: #{player.balance} фишек."
-      puts "  #{dealer}: #{dealer.balance} фишек."
+      puts "  #{game.player}: #{game.player.balance} фишек."
+      puts "  #{game.dealer}: #{game.dealer.balance} фишек."
     end
     puts
-    if player.balance.zero?
+    if game.player.balance.zero?
       puts '  В следующий раз больше повезёт.'
     else
-      puts "  Поздравляю, #{player}, #{2 * Game::STAKE} фишек ваши!"
+      puts "  Поздравляю, #{game.player}, #{2 * Game::STAKE} фишек ваши!"
     end
   end
 
   def take_cards
-    self.deck = PlayingCards::Deck.new
-    player.reset
-    dealer.reset
-    2.times do
-      player.add_card(deck.deal)
-      dealer.add_card(deck.deal)
-    end
+    game.initial_cards
     puts
-    puts "  Карты дилера:  #{dealer.show_suits}"
-    puts "    Ваши карты:  #{player.show_cards}  Сумма: #{player.max_value}"
+    puts "  Карты дилера:  #{game.dealer.show_suits}"
+    puts "    Ваши карты:  #{game.player.show_cards}  Сумма: #{game.player.max_value}"
     puts
     puts '  Ваше действие:'
     puts '   1 - добавить ещё карту'
@@ -100,37 +80,37 @@ class Interface
     puts '   либой другой символ - пропустить ход'
     print '   '
     case gets.strip[0]
-    when '1' then player.add_card(deck.deal)
+    when '1' then game.player.add_card(game.deck.deal)
     when '9' then return showdown
     end
     puts
-    if Game.take_card?(dealer.has_ace?, dealer.max_value)
-      dealer.add_card(deck.deal)
+    if Game.take_card?(game.dealer.has_ace?, game.dealer.max_value)
+      game.dealer.add_card(game.deck.deal)
       puts '  Дилер взял карту.'
     else
       puts '  Дилер пропустил ход.'
     end
-    if player.cards_count == 2
-      if dealer.cards_count == 3
+    if game.player.cards_count == 2
+      if game.dealer.cards_count == 3
         puts
-        puts "  Карты дилера:  #{dealer.show_suits}"
+        puts "  Карты дилера:  #{game.dealer.show_suits}"
       end
       puts
       puts '  Ваше действие:'
       puts '   1 - добавить ещё карту'
       puts '   либой другой символ - открыть карты'
       print '   '
-      player.add_card(deck.deal) if gets.strip[0] == '1'
+      game.player.add_card(game.deck.deal) if gets.strip[0] == '1'
     end
     showdown
   end
 
   def showdown
-    player_val = player.max_value
-    dealer_val = dealer.max_value
+    player_val = game.player.max_value
+    dealer_val = game.dealer.max_value
     puts
-    puts "  Карты дилера:  #{dealer.show_cards}  Сумма: #{dealer_val}"
-    puts "    Ваши карты:  #{player.show_cards}  Сумма: #{player_val}"
+    puts "  Карты дилера:  #{game.dealer.show_cards}  Сумма: #{dealer_val}"
+    puts "    Ваши карты:  #{game.player.show_cards}  Сумма: #{player_val}"
     Game.compare(player_val, dealer_val)
   end
 end
